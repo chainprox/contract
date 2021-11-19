@@ -47,31 +47,11 @@ abstract contract FeeToken is LockedList {
     }
 
     function _transfer(address sender,  address recipient, uint256 amount) internal virtual override {
-        require(sender != address(0), "FeeToken: transfer from the zero address");
-        require(recipient != address(0), "FeeToken: transfer to the zero address");
-
-        uint256 txFee = 0;
-        if (! this.isFeeFree(sender) ){
-            txFee = amount / 100; //1% transfer fee
+        if (!this.isFeeFree(sender)){
+            _burn(sender, amount / 100); //1% transfer fee
         }
-
-        uint256 totalAmount = amount + txFee;
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = super._balances[sender];
-        require(senderBalance >= totalAmount, "FeeToken: transfer amount exceeds balance with 1% fee.");
-
-        _burn(sender, txFee);
-
-        unchecked {
-            super._balances[sender] = senderBalance - totalAmount;
-        }
-        super._balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-
-        _afterTokenTransfer(sender, recipient, amount);
+        
+        super._transfer(sender, recipient, amount);
     }
 }
 
