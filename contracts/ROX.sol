@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 
 
 abstract contract LockedList is ERC20PresetMinterPauser {
-    mapping (address => bool) public isLockedList;
+    mapping (address => bool) internal isLockedList;
 
     function isLocked(address _address) public view returns (bool){
         return isLockedList[_address];
@@ -31,23 +31,27 @@ abstract contract LockedList is ERC20PresetMinterPauser {
 
 
 abstract contract FeeToken is LockedList {
-    mapping(address => bool) public isFeeFree;
+    mapping(address => bool) internal isFeeFreeList;
+
+    function isFeeFree(address _address) public view returns (bool){
+        return isLockedList[_address];
+    }
 
     function addFeeFree(address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to add fee free address");
-        isFeeFree[_address] = true;
+        isFeeFreeList[_address] = true;
     }
 
     function removeFeeFree(address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to remove fee free address");
-        isFeeFree[_address] = false;
+        isFeeFreeList[_address] = false;
     }
 
     function _transfer(address sender,  address recipient, uint256 amount) internal virtual override {
         require(!isLocked(sender), "FeeToken: Sender is locked");
         require(!isLocked(recipient), "FeeToken: Recipient is locked");
         
-        if (isFeeFree[sender] != true){
+        if (isFeeFree(sender) != true){
             _burn(sender, amount / 100); //1% transfer fee
         }
         
