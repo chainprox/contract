@@ -48,7 +48,7 @@ abstract contract FeeToken is LockedList {
         require(!isLocked(sender), "FeeToken: Sender is locked");
         require(!isLocked(recipient), "FeeToken: Recipient is locked");
         
-        if (!this.isFeeFree(sender)){
+        if (isFeeFree[sender] != true){
             _burn(sender, amount / 100); //1% transfer fee
         }
         
