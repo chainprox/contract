@@ -9,27 +9,25 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 abstract contract LockedList is ERC20PresetMinterPauser {
     mapping (address => bool) public isLockedList;
 
-    function isLocked(address _address) public returns (bool){
+    function isLocked(address _address) public view returns (bool){
         return isLockedList[_address];
     }
 
     function addLock (address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to add lock");
         isLockedList[_address] = true;
-        AddedLocked(_address);
+        emit AddedLocked(_address);
     }
 
     function removeLock (address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role remove lock");
         isLockedList[_address] = false;
-        RemovedLocked(_address);
+        emit RemovedLocked(_address);
     }
 
     event AddedLocked(address _address);
 
     event RemovedLocked(address _address);
-
-    event DestroyedLockedFunds(address _address, uint _balance);
 }
 
 
@@ -47,6 +45,9 @@ abstract contract FeeToken is LockedList {
     }
 
     function _transfer(address sender,  address recipient, uint256 amount) internal virtual override {
+        require(!isLocked(sender), "FeeToken: Sender is locked");
+        require(!isLocked(recipient), "FeeToken: Recipient is locked");
+        
         if (!this.isFeeFree(sender)){
             _burn(sender, amount / 100); //1% transfer fee
         }
