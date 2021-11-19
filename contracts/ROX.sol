@@ -25,17 +25,6 @@ abstract contract LockedList is ERC20PresetMinterPauser {
         RemovedLocked(_address);
     }
 
-    function destroyLockedFunds (address _address) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to detroy locked funds");
-        require(isLockedList[_address], "LockedList: address is not locked");
-
-        uint funds = balanceOf(_address);
-
-        this._balances[_address] = 0;
-        this._totalSupply -= funds;
-        DestroyedLockedFunds(_address, funds);
-    }
-
     event AddedLocked(address _address);
 
     event RemovedLocked(address _address);
@@ -62,7 +51,7 @@ abstract contract FeeToken is LockedList {
         require(recipient != address(0), "FeeToken: transfer to the zero address");
 
         uint256 txFee = 0;
-        if (isFeeFree(sender)){
+        if (! this.isFeeFree(sender) ){
             txFee = amount / 100; //1% transfer fee
         }
 
@@ -70,7 +59,7 @@ abstract contract FeeToken is LockedList {
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        uint256 senderBalance = this._balances[sender];
+        uint256 senderBalance = super._balances[sender];
         require(senderBalance >= totalAmount, "FeeToken: transfer amount exceeds balance with 1% fee.");
 
         _burn(sender, txFee);
