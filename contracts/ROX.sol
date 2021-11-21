@@ -35,17 +35,19 @@ abstract contract FeeToken is LockedList {
     mapping(address => bool) internal isFeeFreeList;
 
     function isFeeFree(address _address) public view returns (bool){
-        return isLockedList[_address];
+        return isFeeFreeList[_address];
     }
 
     function addFeeFree(address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to add fee free address");
         isFeeFreeList[_address] = true;
+        emit AddedFeeFree(_address);
     }
 
     function removeFeeFree(address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "LockedList: must have admin role to remove fee free address");
         isFeeFreeList[_address] = false;
+        emit RemovedFeeFree(_address);
     }
 
     function _transfer(address sender,  address recipient, uint256 amount) internal virtual override {
@@ -58,6 +60,10 @@ abstract contract FeeToken is LockedList {
         
         super._transfer(sender, recipient, amount);
     }
+    
+    event AddedFeeFree(address _address);
+
+    event RemovedFeeFree(address _address);
 }
 
 
