@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./token/ERC20/utils/SafeERC20.sol";
-import "./token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "./SafeERC20.sol";
+import "./ERC20PresetMinterPauser.sol";
 
 
 abstract contract LockedList is ERC20PresetMinterPauser {
