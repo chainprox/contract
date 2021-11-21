@@ -4,4 +4,4 @@
 .vscode
 npm-debug.log*
 package-lock.json
-/artifacts/*
+artifacts/*
