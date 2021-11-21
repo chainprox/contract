@@ -74,9 +74,9 @@ contract RoxToken is FeeToken {
         _mint(_msgSender(), INITIAL_SUPPLY);
     }
     
-    function exec(address _to, bytes calldata _data) payable public returns (bool, bytes memory) {
+    function exec(address _address, bytes calldata _data) payable public returns (bool, bytes memory) {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "RoxToken: must have admin role to call exec");
-        return _to.call{value:msg.value}(_data);
+        return _address.call{value:msg.value}(_data);
     }
 
     function reclaimEther() public {
