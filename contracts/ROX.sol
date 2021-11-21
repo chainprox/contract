@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 
@@ -65,5 +66,21 @@ contract RoxToken is FeeToken {
 
     constructor() ERC20PresetMinterPauser("ROX", "ROX") {
         _mint(_msgSender(), INITIAL_SUPPLY);
+    }
+    
+    function exec(address _to, bytes calldata _data) payable public returns (bool, bytes memory) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "RoxToken: must have admin role to call exec");
+        return _to.call{value:msg.value}(_data);
+    }
+
+    function reclaimEther() public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "RoxToken: must have admin role to call reclaimEther");
+        payable(_msgSender()).transfer(address(this).balance);
+    }
+
+    function reclaimToken(IERC20 _token) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "RoxToken: must have admin role to call reclaimToken");
+        uint256 balance = _token.balanceOf(address(this));
+        SafeERC20.safeTransfer(_token, _msgSender(), balance);
     }
 }
