@@ -1,1 +1,3 @@
 # contract
+
+ROX is a crypto token serving as the Chainprox ecosystem's main settlement asset. ROX is issued on the Binance Smart Chain blockchain according to the BEP20/ERC20 standard. Users get rewarded with ROX tokens for the bandwidth they share through their internet connections. This passive income is paid out instantaneously to their accounts. ROX tokens can be exchanged for other cryptocurrencies on a number of decentralized crypto exchanges. Additionally, by staking ROX you can have a share in Chainprox revenues. Eventually, Chainprox users will be able to use ROX to buy Chainprox services
