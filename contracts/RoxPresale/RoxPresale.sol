@@ -126,9 +126,7 @@ contract RoxPresale is ReclaimContract {
         require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "RoxPresale: Too low ROX contract balanace.");
 
         uint256 fromAmount = tokenAmount * presalePriceRatio() / 100;
-        uint256 allowance = _fromToken.allowance(_msgSender(), address(this));
-        require(allowance >= fromAmount, "RoxPresale: Check the token allowance");
-
+    
         // transfer stable coins to the contract
         SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), fromAmount);
         
