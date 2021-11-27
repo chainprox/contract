@@ -131,7 +131,7 @@ contract RoxPresale is ReclaimContract {
     
     function buyROX(IERC20 _fromToken, uint256 _fromAmount, address _toAddress) public payable {
         require(!paused(), "RoxPresale: contract is paused");
-        require(_fromAmount > presaleMinUSDAmount(), "RoxPresale: Minimum amount of tokens not reached");
+        require(_fromAmount < presaleMinUSDAmount(), "RoxPresale: Minimum amount of tokens not reached");
 
         address fromTokenAddress = address(_fromToken);
         require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens. allowed") ;
