@@ -104,7 +104,7 @@ contract RoxPresale is ReclaimContract {
         _setupRole(PAUSER_ROLE, _msgSender());
         
         _presalePriceInCents = SafeMath.mul(60, 1e18);
-        _presaleInitAvailableTokens = SafeMath.mul(10_000_00, 1e18);
+        _presaleInitAvailableTokens = SafeMath.mul(10_000_000, 1e18);
         _presaleMinUSDAmount = SafeMath.mul(10, 1e18);
     }
 
