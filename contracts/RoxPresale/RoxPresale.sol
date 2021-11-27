@@ -34,18 +34,13 @@ abstract contract Globals {
 abstract contract Pauser is Context, AccessControlEnumerable, Pausable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setupRole(PAUSER_ROLE, _msgSender());
-    }
-
     function pause() public virtual {
-        require(hasRole(PAUSER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have pauser role to pause");
+        require(hasRole(PAUSER_ROLE, _msgSender()), "Pauser: Must have pauser role to pause.");
         _pause();
     }
 
     function unpause() public virtual {
-        require(hasRole(PAUSER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have pauser role to unpause");
+        require(hasRole(PAUSER_ROLE, _msgSender()), "Pauser: Must have pauser role to unpause.");
         _unpause();
     }
 }
@@ -73,11 +68,13 @@ abstract contract VestingWallet is Globals, Pauser {
         require(!paused(), "VestingWallet: contract is paused.");
 
         uint256 _vestedAmount = vestedAmount(_address);
-        require(_vestedAmount > 0, "VestingWallet: No ROX tokens currently vested");
+        require(_vestedAmount > 0, "VestingWallet: No ROX tokens currently vested.");
         
         SafeERC20.safeTransfer(ROX_TOKEN, _address, _vestedAmount);
         _vestedAmountList[_address] = 0;
         _totalVestedAmount -= _vestedAmount;
+        
+        emit ReleasedVesting(_address);
     }
 
     event AddedVesting(address _address, uint256 amount);
@@ -88,12 +85,12 @@ abstract contract VestingWallet is Globals, Pauser {
 
 abstract contract ReclaimContract is VestingWallet {
     function reclaimEther() public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: must have admin role to call reclaimEther");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: Must have admin role to call reclaimEther.");
         payable(_msgSender()).transfer(address(this).balance);
     }
 
     function reclaimToken(IERC20 _token) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: must have admin role to call reclaimToken");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: Must have admin role to call reclaimToken.");
         uint256 balance = _token.balanceOf(address(this));
         SafeERC20.safeTransfer(_token, payable(_msgSender()), balance);
     }
@@ -104,12 +101,17 @@ contract RoxPresale is ReclaimContract {
     uint256 internal MIN_USD_AMOUNT = 10 * (10**18);
     uint256 internal _presalePriceRatio  = 6;
     
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(PAUSER_ROLE, _msgSender());
+    }
+    
     function presalePriceRatio() public view returns (uint256) {
         return _presalePriceRatio;
     }
     
     function setNewPriceRatio(uint256 _newPriceRatio) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: must have admin role to call reclaimToken");
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: Must have admin role to call setNewPriceRatio.");
         _presalePriceRatio = _newPriceRatio;
     }
     
@@ -118,16 +120,17 @@ contract RoxPresale is ReclaimContract {
         
         address fromTokenAddress = address(_fromToken);
         require(_fromAmount > MIN_USD_AMOUNT, "RoxPresale: Minimum amount of tokens not reached");
-        require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens allowed") ;
+        require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens. allowed") ;
 
-        uint256 tokenAmount = _fromAmount * presalePriceRatio()/100;
-        require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "RoxPresale: Too low ROX contract balanace");
+        uint256 tokenAmount = _fromAmount * 100 / presalePriceRatio();
+        require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "RoxPresale: Too low ROX contract balanace.");
 
+        uint256 fromAmount = tokenAmount * presalePriceRatio() / 100;
         uint256 allowance = _fromToken.allowance(_msgSender(), address(this));
-        require(allowance >= _fromAmount, "RoxPresale: Check the token allowance");
+        require(allowance >= fromAmount, "RoxPresale: Check the token allowance");
 
         // transfer stable coins to the contract
-        SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), _fromAmount);
+        SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), fromAmount);
         
         // add token to vesting wallet
         addVesting(_toAddress, tokenAmount);
