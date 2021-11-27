@@ -101,24 +101,35 @@ abstract contract ReclaimContract is VestingWallet {
 
 
 contract RoxPresale is ReclaimContract {
-    uint256 presalePriceRatio = 6;
+    uint256 internal MIN_USD_AMOUNT = 10 * (10**18);
+    uint256 internal _presalePriceRatio  = 6;
     
-    function buyROX(IERC20 fromToken, uint256 fromAmount, address toAddress) public payable {
-        require(!paused(), "RoxPresale: contract is paused.");
+    function presalePriceRatio() public view returns (uint256) {
+        return _presalePriceRatio;
+    }
+    
+    function setNewPriceRatio(uint256 _newPriceRatio) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: must have admin role to call reclaimToken");
+        _presalePriceRatio = _newPriceRatio;
+    }
+    
+    function buyROX(IERC20 _fromToken, uint256 _fromAmount, address _toAddress) public payable {
+        require(!paused(), "RoxPresale: contract is paused");
         
-        address fromTokenAddress = address(fromToken);
-        require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "Only BSC-USD, BUSD, TUSD tokens allowed") ;
+        address fromTokenAddress = address(_fromToken);
+        require(_fromAmount > MIN_USD_AMOUNT, "RoxPresale: Minimum amount of tokens not reached");
+        require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens allowed") ;
 
-        uint256 tokenAmount = fromAmount*100/6;
-        require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "Too low ROX contract balanace");
+        uint256 tokenAmount = _fromAmount * presalePriceRatio()/100;
+        require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "RoxPresale: Too low ROX contract balanace");
 
-        uint256 allowance = fromToken.allowance(_msgSender(), address(this));
-        require(allowance >= fromAmount, "Check the token allowance");
+        uint256 allowance = _fromToken.allowance(_msgSender(), address(this));
+        require(allowance >= _fromAmount, "RoxPresale: Check the token allowance");
 
         // transfer stable coins to the contract
-        SafeERC20.safeTransferFrom(fromToken, _msgSender(), address(this), fromAmount);
+        SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), _fromAmount);
         
         // add token to vesting wallet
-        addVesting(toAddress, tokenAmount);
+        addVesting(_toAddress, tokenAmount);
     }
 }
