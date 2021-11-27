@@ -48,6 +48,7 @@ abstract contract Pauser is Context, AccessControlEnumerable, Pausable {
 
 abstract contract VestingWallet is Globals, Pauser {
     uint256 internal _totalVestedAmount;
+
     mapping(address => uint256) internal _vestedAmountList;
     
     function totalVestedAmount() public view returns (uint256) {
@@ -98,39 +99,58 @@ abstract contract ReclaimContract is VestingWallet {
 
 
 contract RoxPresale is ReclaimContract {
-    uint256 internal MIN_USD_AMOUNT = 10 * (10**18);
-    uint256 internal _presalePriceRatio  = 6;
+    uint256 internal _presaleMinUSDAmount;
+    uint256 internal _presalePriceInCents;
+    uint256 internal _presaleInitAvailableTokens;
+    uint256 internal _soldTokenAmount = 0;
     
-    constructor() {
+    constructor(uint256 minUSDAmount, uint256 priceInCents, uint256 initAvailableTokens) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
+        
+        _presalePriceInCents = priceInCents;
+        _presaleInitAvailableTokens = initAvailableTokens;
+        _presaleMinUSDAmount = minUSDAmount;
+    }
+
+    function presaleMinUSDAmount() public view returns (uint256) {
+        return _presaleMinUSDAmount;
     }
     
-    function presalePriceRatio() public view returns (uint256) {
-        return _presalePriceRatio;
+    function presalePriceInCents() public view returns (uint256) {
+        return _presalePriceInCents;
     }
     
-    function setNewPriceRatio(uint256 _newPriceRatio) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ReclaimContract: Must have admin role to call setNewPriceRatio.");
-        _presalePriceRatio = _newPriceRatio;
+    function presaleInitAvailableTokens() public view returns (uint256) {
+        return _presaleInitAvailableTokens;
     }
+    
+    function presaleAvailableTokens() public view returns (uint256) {
+        return _presaleInitAvailableTokens - _soldTokenAmount;
+    }
+    
+    function soldTokenAmount() public view returns (uint256) {
+        return _soldTokenAmount;
+    }
+    
     
     function buyROX(IERC20 _fromToken, uint256 _fromAmount, address _toAddress) public payable {
         require(!paused(), "RoxPresale: contract is paused");
-        
+        require(_fromAmount > presaleMinUSDAmount(), "RoxPresale: Minimum amount of tokens not reached");
+
         address fromTokenAddress = address(_fromToken);
-        require(_fromAmount > MIN_USD_AMOUNT, "RoxPresale: Minimum amount of tokens not reached");
         require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens. allowed") ;
 
-        uint256 tokenAmount = _fromAmount * 100 / presalePriceRatio();
-        require (ROX_TOKEN.balanceOf(address(this)) > tokenAmount, "RoxPresale: Too low ROX contract balanace.");
-
-        uint256 fromAmount = tokenAmount * presalePriceRatio() / 100;
+        uint256 tokenAmount = _fromAmount * 100 / presalePriceInCents();
+        require(tokenAmount >= presaleAvailableTokens(), "RoxPresale: Not enought ROX to buy");
+        
+        uint256 fromAmount = tokenAmount * presalePriceInCents() / 100;
     
         // transfer stable coins to the contract
         SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), fromAmount);
         
         // add token to vesting wallet
         addVesting(_toAddress, tokenAmount);
+        _soldTokenAmount += tokenAmount;
     }
 }
