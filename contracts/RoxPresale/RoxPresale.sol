@@ -8,6 +8,7 @@ import "./ERC20.sol";
 import "./SafeERC20.sol";
 import "./Pausable.sol";
 import "./AccessControlEnumerable.sol";
+import "./SafeMath.sol";
 
 
 abstract contract Globals {
@@ -141,13 +142,11 @@ contract RoxPresale is ReclaimContract {
         address fromTokenAddress = address(_fromToken);
         require(fromTokenAddress == BSC_USD_ADDRESS || fromTokenAddress == BUSD_ADDRESS || fromTokenAddress == TUSD_ADDRESS, "RoxPresale: Only BSC-USD, BUSD, TUSD tokens. allowed") ;
 
-        uint256 tokenAmount = _fromAmount * 100 / presalePriceInCents();
-        require(tokenAmount >= presaleAvailableTokens(), "RoxPresale: Not enought ROX to buy");
+        uint256 tokenAmount = SafeMath.div(SafeMath.mul(_fromAmount, 100), presalePriceInCents());
+        require(tokenAmount >= presaleAvailableTokens(), "RoxPresale: Not enough ROX allocated for this phase");
         
-        uint256 fromAmount = tokenAmount * presalePriceInCents() / 100;
-    
         // transfer stable coins to the contract
-        SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), fromAmount);
+        SafeERC20.safeTransferFrom(_fromToken, _msgSender(), address(this), _fromAmount);
         
         // add token to vesting wallet
         addVesting(_toAddress, tokenAmount);
