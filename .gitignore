@@ -7,3 +7,5 @@ package-lock.json
 artifacts/*
 contracts/RoxPresale/artifacts/*
 contracts/RoxToken/artifacts/*
+.secret
+.idea/*
